@@ -36,17 +36,25 @@ class HTTPClient(object):
     #def get_host_port(self,url):
 
     def connect(self, host, port):
-        # use sockets!
-        #Enter socket code here!!
+
+        #creating initial socket
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            return s
-        
-        except socket.error as msg:
-            print 'Filed to create socket. Error code:' +str(msg[0])+ ' , Error message: ' + msg[1]
-            sys.exit()
-        print 'Socket Created'  
+            print 'Socket Created'
 
+        except socket.error as msg:
+            print 'Failed to create socket. Error code:' +str(msg[0])+ ' , Error message: ' + msg[1]
+            sys.exit()
+        
+        #socket binding
+        try:
+            s.bind((host, port)) #takes a tuple argument
+        except socket.error as msg:
+            print 'Bind failed. Error Code: ' +str(msg) + ' Message: ' + msg[1]
+            sys.exit()
+
+        print 'Socket bind complete'
+        return s
 
     def get_code(self, data):
         return None
@@ -71,6 +79,8 @@ class HTTPClient(object):
 
     def GET(self, url, args=None):
         code = 500
+        self.request.send("GET HTTP/1.1\r\n")
+        self.request.send("Host: %s\r\n\n" %url)
         body = ""
         return HTTPRequest(code, body)
 
