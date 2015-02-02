@@ -22,7 +22,8 @@ import sys
 import socket
 import re
 # you may use urllib to encode data appropriately
-import urllib
+#import urllib
+from urlparse import urlparse
 
 def help():
     print "httpclient.py [GET/POST] [URL]\n"
@@ -40,20 +41,26 @@ class HTTPClient(object):
         #creating initial socket
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            print 'Socket Created'
 
         except socket.error as msg:
             print 'Failed to create socket. Error code:' +str(msg[0])+ ' , Error message: ' + msg[1]
             sys.exit()
         
-        #socket binding
+        print 'Socket Created'
+
         try:
-            s.bind((host, port)) #takes a tuple argument
-        except socket.error as msg:
-            print 'Bind failed. Error Code: ' +str(msg) + ' Message: ' + msg[1]
+            remote_ip = socket.gethostbyname(host)
+
+        except socket.gaierror:
+            #could not resolve
+            print 'Hostname could not be resolved. Exiting'
             sys.exit()
 
-        print 'Socket bind complete'
+        print 'Ip address of ' + host + ' is ' + remote_ip
+
+        #Connect to remote server
+        s.connect((remote_ip, port))
+        print 'Socket Connected to ' + host + ' on ip ' + remote_ip
         return s
 
     def get_code(self, data):
@@ -78,9 +85,21 @@ class HTTPClient(object):
         return str(buffer)
 
     def GET(self, url, args=None):
+        urlInfo = urlparse(url)
+        port = urlInfo.port
+        if port == None:
+            port = 80
+        netLocation = urlInfo.netloc
+        tempHost = netLocation.split(':')
+        host = tempHost[0]
+        if host == None:
+            host = 'localhost'
+        serverSocket = self.connect(host, port)
+        serverSocket.send("GET HTTP/1.1\r\n")
+        serverSocket.send("Host: %s\r\n\n" %host)
+        self.data = serverSocket.recv(1024).strip()
         code = 500
-        self.request.send("GET HTTP/1.1\r\n")
-        self.request.send("Host: %s\r\n\n" %url)
+        print self.data
         body = ""
         return HTTPRequest(code, body)
 
@@ -89,7 +108,7 @@ class HTTPClient(object):
         body = ""
         return HTTPRequest(code, body)
 
-    def command(self, url, command="GET", args=None):
+    def command(self, command, url, args=None):
         if (command == "POST"):
             return self.POST( url, args )
         else:
