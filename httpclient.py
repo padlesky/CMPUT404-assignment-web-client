@@ -34,7 +34,20 @@ class HTTPRequest(object):
         self.body = body
 
 class HTTPClient(object):
-    #def get_host_port(self,url):
+
+    def get_host_port(self,url):
+        urlInfo = urlparse(url)
+        port = urlInfo.port
+        if port == None:
+            port = 80
+        path = urlInfo.path
+        netLocation = urlInfo.netloc
+        tempHost = netLocation.split(':')
+        host = tempHost[0]
+        if host == None:
+            host = 'localhost'
+
+        return [host, port, path]
 
     def connect(self, host, port):
 
@@ -91,16 +104,11 @@ class HTTPClient(object):
 
 
     def GET(self, url, args=None):
-        urlInfo = urlparse(url)
-        port = urlInfo.port
-        if port == None:
-            port = 80
-        path = urlInfo.path
-        netLocation = urlInfo.netloc
-        tempHost = netLocation.split(':')
-        host = tempHost[0]
-        if host == None:
-            host = 'localhost'
+        hostPortInfo = self.get_host_port(url)
+        host = hostPortInfo[0]
+        port = hostPortInfo[1]
+        path = hostPortInfo[2]
+     
         serverSocket = self.connect(host, port)
         serverSocket.send("GET %s HTTP/1.1\r\n" %path)
         serverSocket.send("Host: %s\r\n\n" %host)
@@ -110,16 +118,11 @@ class HTTPClient(object):
         return HTTPRequest(code, body)
 
     def POST(self, url, args=None):
-        urlInfo = urlparse(url)
-        port = urlInfo.port
-        if port ==None:
-            port = 80
-        path = urlInfo.path
-        netLocation = urlInfo.netloc
-        tempHost = netLocation.split(':')
-        host = tempHost[0]
-        if host == None:
-            host = 'localhost'
+        hostPortInfo = self.get_host_port(url)
+        host = hostPortInfo[0]
+        port = hostPortInfo[1]
+        path = hostPortInfo[2]
+     
         serverSocket = self.connect(host, port)
         if args == None: 
             serverSocket.send("POST %s HTTP/1.1\r\n" %path)
