@@ -34,3 +34,7 @@ compatible) http://docs.python.org/2/library/socketserver.html
 External Sources Used
 ========================
 
+https://docs.python.org/2/library/urlparse.html  
+Author: Python Software Foundation   
+All Rights Reserved under the PSF license (GPL
+compatible)  
