@@ -22,7 +22,7 @@ import sys
 import socket
 import re
 # you may use urllib to encode data appropriately
-#import urllib
+import urllib
 from urlparse import urlparse
 
 def help():
@@ -57,20 +57,25 @@ class HTTPClient(object):
             sys.exit()
 
         print 'Ip address of ' + host + ' is ' + remote_ip
-
         #Connect to remote server
         s.connect((remote_ip, port))
         print 'Socket Connected to ' + host + ' on ip ' + remote_ip
         return s
 
     def get_code(self, data):
-        return None
+        response = data.split("\r\n\r\n")
+        code = response[0].split(" ")       
+        return code[1]
 
     def get_headers(self,data):
         return None
 
     def get_body(self, data):
-        return None
+        response = data.split("\r\n\r\n")
+        if (len(response) > 1):
+            return response[1]
+        else:
+            return response[0]
 
     # read everything from the socket
     def recvall(self, sock):
@@ -84,28 +89,52 @@ class HTTPClient(object):
                 done = not part
         return str(buffer)
 
+
     def GET(self, url, args=None):
         urlInfo = urlparse(url)
         port = urlInfo.port
         if port == None:
             port = 80
+        path = urlInfo.path
         netLocation = urlInfo.netloc
         tempHost = netLocation.split(':')
         host = tempHost[0]
         if host == None:
             host = 'localhost'
         serverSocket = self.connect(host, port)
-        serverSocket.send("GET HTTP/1.1\r\n")
+        serverSocket.send("GET %s HTTP/1.1\r\n" %path)
         serverSocket.send("Host: %s\r\n\n" %host)
-        self.data = serverSocket.recv(1024).strip()
-        code = 500
-        print self.data
-        body = ""
+        data = self.recvall(serverSocket)
+        code = int(self.get_code(data))
+        body = self.get_body(data)
         return HTTPRequest(code, body)
 
     def POST(self, url, args=None):
-        code = 500
-        body = ""
+        urlInfo = urlparse(url)
+        port = urlInfo.port
+        if port ==None:
+            port = 80
+        path = urlInfo.path
+        netLocation = urlInfo.netloc
+        tempHost = netLocation.split(':')
+        host = tempHost[0]
+        if host == None:
+            host = 'localhost'
+        serverSocket = self.connect(host, port)
+        if args == None: 
+            serverSocket.send("POST %s HTTP/1.1\r\n" %path)
+            serverSocket.send("Host: %s\r\n\n" %host)
+        else:
+            contentLength = len(urllib.urlencode(args))
+            serverSocket.send("POST %s HTTP/1.1\r\n" %path)
+            serverSocket.send("Host: %s\r\n" %host)
+            serverSocket.send("Connection: close\r\n")
+            serverSocket.send("Content-Type: application/x-www-form-urlencoded\r\n")
+            serverSocket.send("Content-Length: %s\r\n\r\n" %contentLength)
+            serverSocket.send("%s\r\n" %urllib.urlencode(args))
+        data = self.recvall(serverSocket)
+        code = int(self.get_code(data))
+        body = self.get_body(data)
         return HTTPRequest(code, body)
 
     def command(self, command, url, args=None):
