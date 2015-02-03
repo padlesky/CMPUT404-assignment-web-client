@@ -5,7 +5,7 @@ CMPUT404-assignment-web-client. Make a simple web-client like curl or wget
 
 See requirements.org (plain-text) for a description of the project.  
 
-Pair Programmed with Aaron Padlesky  
+Pair Programmed with Pranjali Pokharel  
 
 Talked with Ashley Fegan about broad assignment topics. 
 
